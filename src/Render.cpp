@@ -1,8 +1,10 @@
 #include "Render.h"
+#include "tools.h"
 
 Render::Render(int w, int h) : width(w), height(h)
 {
-    frameBuffer.resize(h * w);
+    frameBuffer.resize(w * h);
+    depthBuffer.resize(w * h);
     image_data = new unsigned char[w * h * 3];
 }
 
@@ -78,7 +80,7 @@ void Render::buildBuffer()
     frameBuffer.resize(width * height);
 }
 
-void Render::clearBuffer(BufferType &type)
+void Render::clearBuffer(BufferType type)
 {
     if (type == BufferType::COLOR_BUF)
     {
@@ -88,5 +90,48 @@ void Render::clearBuffer(BufferType &type)
     if (type == BufferType::DEPTH_BUF)
     {
         std::fill(depthBuffer.begin(), depthBuffer.end(), std::numeric_limits<float>::infinity());
+    }
+}
+
+void Render::draw()
+{
+    this->clearBuffer(BufferType::DEPTH_BUF);
+    for(auto t : TriangleLists)
+    {
+        rasterizeTriangle(*t);
+    }
+}
+
+
+void Render::rasterizeTriangle(const Triangle &t)
+{
+    auto vex = t.tovec4(1.0f);
+    //bounding Box边界	适当放大以防止边缘丢失
+    int max_x = static_cast<int>(std::max(vex[0].x, std::max(vex[1].x, vex[2].x)) + 2);
+    int min_x = static_cast<int>(std::min(vex[0].x, std::min(vex[1].x, vex[2].x)) - 2);
+	int max_y = static_cast<int>(std::max(vex[0].y, std::max(vex[1].y, vex[2].y)) + 2);
+	int min_y = static_cast<int>(std::min(vex[0].y, std::min(vex[1].y, vex[2].y)) - 2);
+
+    for (int x = min_x; x < max_x; x++)
+	{
+		for (int y = min_y; y < max_y; y++)
+		{
+            //超出屏幕范围的数值直接丢弃,否则frameBuffer会越界
+			if (x < 0 || x >= width || y < 0 || y >= height)
+				continue;
+            if (insideTriangle(x + 0.5, y + 0.5, t.vertex))
+            {
+                auto [a, b, c] = computeBarycentric2D(x + 0.5, y + 0.5, t.vertex);
+
+                float z_interpolated = a * vex[0].z / vex[0].w + b * vex[1].z / vex[1].w + c * vex[2].z / vex[2].w;
+
+                if (z_interpolated < depthBuffer[getPos(x, y)])
+                {
+                    glm::vec3 color = a * t.vColor[0] + b * t.vColor[1] + c * t.vColor[2];
+                    frameBuffer[getPos(x, y)] = color;
+                    depthBuffer[getPos(x, y)] = z_interpolated;
+                }
+            }
+        }
     }
 }

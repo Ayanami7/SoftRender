@@ -20,12 +20,14 @@ add_executable(SoftRender
     include/OBJ_Loader.h
     include/Camera.h
     include/Ray.h
+    include/tools.h
 
     src/stb_image_write.cpp
     src/stb_image.cpp
     src/main.cpp
     src/Render.cpp
     src/Triangle.cpp
+    src/tools.cpp
 )
 
 target_include_directories(SoftRender

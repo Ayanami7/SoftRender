@@ -3,6 +3,7 @@
 */
 #pragma once
 #include <glm/glm.hpp>
+#include <iostream>
 #define MY_PI 3.14159
 
 //sign the rotate axis

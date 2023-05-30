@@ -20,12 +20,15 @@ public:
     void imagePrint(std::string path);                          //print image
     void drawLine(glm::vec3 startPos, glm::vec3 endPos, const glm::vec3 color);
     void drawWireframe(Triangle &t, const glm::vec3 &color);
-    void drawTriangle(Triangle &t);
-    void clearBuffer(BufferType &type);
+    void rasterizeTriangle(const Triangle &t);
+    void draw();
+    void clearBuffer(BufferType type);
 
     void setModelMatrix(const glm::mat4 &m) { model = m; }
     void setViewMatrix(const glm::mat4 &v) { view = v; }
     void setProjectionMatrix(const glm::mat4 &p) { projection = p; }
+    
+    std::vector<Triangle *> TriangleLists;
 
 private:
     int height;
@@ -35,7 +38,6 @@ private:
     glm::mat4 view;
     glm::mat4 projection;
 
-    std::vector<Triangle *> TriangleLists;
     std::vector<float> depthBuffer;
     std::vector<glm::vec3> frameBuffer;
     unsigned char *image_data;

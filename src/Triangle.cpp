@@ -36,3 +36,13 @@ void Triangle::setTexCoord(int index, const glm::vec2 &tex_coord)
 {
     texCoord[index] = tex_coord;
 }
+
+// transform the vec3(vertex[3]) to vec4 with w 
+std::array<glm::vec4, 3> Triangle::tovec4(float w) const
+{
+    std::array<glm::vec4, 3> res;
+    res[0] = glm::vec4(vertex[0].x, vertex[0].y, vertex[0].z, w);
+    res[1] = glm::vec4(vertex[1].x, vertex[1].y, vertex[1].z, w);
+    res[2] = glm::vec4(vertex[2].x, vertex[2].y, vertex[2].z, w);
+    return res;
+}

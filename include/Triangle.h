@@ -3,6 +3,8 @@
 */
 #pragma once
 #include "global.h"
+#include <array>
+
 class Triangle
 {
 public:
@@ -22,4 +24,6 @@ public:
     void setNormal(int index, const glm::vec3 &n);
     void setColor(int index, const glm::vec3 &v_color);
     void setTexCoord(int index, const glm::vec2 &t_coord);
+
+    std::array<glm::vec4, 3> tovec4(float w) const;
 };
