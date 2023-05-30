@@ -1,0 +1,5 @@
+/.vscode
+/build
+/bin
+/output
+/src/main.cpp
