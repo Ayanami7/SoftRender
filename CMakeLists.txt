@@ -28,6 +28,7 @@ add_executable(SoftRender
     src/Render.cpp
     src/Triangle.cpp
     src/tools.cpp
+	src/Camera.cpp
 )
 
 target_include_directories(SoftRender

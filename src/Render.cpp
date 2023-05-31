@@ -3,14 +3,15 @@
 
 Render::Render(int w, int h) : width(w), height(h)
 {
-    frameBuffer.resize(w * h);
+	camera = nullptr;
+	frameBuffer.resize(w * h);
     depthBuffer.resize(w * h);
     image_data = new unsigned char[w * h * 3];
 }
 
 Render::~Render()
 {
-
+	
 }
 
 void Render::drawLine(glm::vec3 startPos, glm::vec3 endPos, const glm::vec3 color)
@@ -68,9 +69,17 @@ void Render::imagePrint(std::string path)
 
 void Render::drawWireframe(Triangle &t, const glm::vec3 &color)
 {
-    drawLine(t.a(), t.b(), color);
+	for (int i = 0; i < 3;i++)
+	{
+		if(t.vertex[i].x <0||t.vertex[i].x>= width)
+			return;
+		if(t.vertex[i].y <0||t.vertex[i].y>= height)
+			return;
+	}
+	drawLine(t.a(), t.b(), color);
     drawLine(t.b(), t.c(), color);
     drawLine(t.c(), t.a(), color);
+	std::cout << "Triangle" << sum++ << "draw finished!" << std::endl;
 }
 
 
@@ -95,18 +104,82 @@ void Render::clearBuffer(BufferType type)
 
 void Render::draw()
 {
-    this->clearBuffer(BufferType::DEPTH_BUF);
-    for(auto t : TriangleLists)
-    {
-        rasterizeTriangle(*t);
-    }
-}
+	if(camera == nullptr)
+	{
+		std::cout << "Error: Fail to load camera!" << std::endl;
+		return;
+	}
 
+	this->clearBuffer(BufferType::DEPTH_BUF);
+
+	//mvp transform
+	glm::mat4 viewMatrix = camera->getViewMatrix();
+	glm::mat4 projectionMatrix = camera->getProjectionMatrix();
+	glm::mat4 mvp = projectionMatrix * viewMatrix * modelMatrix;
+
+    for(auto &t : TriangleLists)
+    {
+		// auto ver_vec4 = t->vec4Array(1.0);
+
+		// //transform to camera coordinate system
+		// ver_vec4[0] = viewMatrix * modelMatrix * ver_vec4[0];
+		// ver_vec4[1] = viewMatrix * modelMatrix * ver_vec4[1];
+		// ver_vec4[2] = viewMatrix * modelMatrix * ver_vec4[2];
+		Triangle triangle = *t;
+		glm::vec4 v[] =
+			{
+				mvp * tovec4(t->vertex[0], 1.0f),
+				mvp * tovec4(t->vertex[1], 1.0f),
+				mvp * tovec4(t->vertex[2], 1.0f)
+			};
+
+		for(auto &vec : v)
+		{
+			vec.x /= vec.w;
+            vec.y /= vec.w;
+            vec.z /= vec.w;
+		}
+
+		//use inverse transponse matrix to make sure the normal vec correctly
+		glm::mat4 inverseTrans = glm::transpose(glm::inverse(viewMatrix * modelMatrix));
+
+		glm::vec4 n[] =
+			{
+				inverseTrans * tovec4(t->normal[0], 1.0f),
+				inverseTrans * tovec4(t->normal[1], 1.0f),
+				inverseTrans * tovec4(t->normal[2], 1.0f)
+			};
+
+		// Map[-1,1] to [width,height];
+		for(auto &vec : v)
+		{
+			vec.x = 0.5 * width * (vec.x + 1.0);
+			vec.y = 0.5 * height * (vec.y + 1.0);
+			auto t1 = -(camera->getFar() - camera->getNear()) / 2;
+			auto t2 = -(camera->getFar() + camera->getNear()) / 2;
+			vec.z = vec.z * t2 + t1;
+			//transform to negative value when calculate
+		}
+
+		for (int i = 0; i < 3;i++)
+		{
+			triangle.setVertex(i, glm::vec3(v[i].x, v[i].y, v[i].z));
+		}
+
+		for (int i = 0; i < 3;i++)
+		{
+			triangle.setNormal(i, glm::vec3(n[i].x, n[i].y, n[i].z));
+		}
+
+		glm::vec3 pen(100, 100, 100);
+		drawWireframe(triangle, pen);
+	}
+}
 
 void Render::rasterizeTriangle(const Triangle &t)
 {
-    auto vex = t.tovec4(1.0f);
-    //bounding Box边界	适当放大以防止边缘丢失
+    auto vex = t.vec4Array(1.0f);
+    //bounding Box
     int max_x = static_cast<int>(std::max(vex[0].x, std::max(vex[1].x, vex[2].x)) + 2);
     int min_x = static_cast<int>(std::min(vex[0].x, std::min(vex[1].x, vex[2].x)) - 2);
 	int max_y = static_cast<int>(std::max(vex[0].y, std::max(vex[1].y, vex[2].y)) + 2);
@@ -116,7 +189,7 @@ void Render::rasterizeTriangle(const Triangle &t)
 	{
 		for (int y = min_y; y < max_y; y++)
 		{
-            //超出屏幕范围的数值直接丢弃,否则frameBuffer会越界
+            //discard the data over the edge
 			if (x < 0 || x >= width || y < 0 || y >= height)
 				continue;
             if (insideTriangle(x + 0.5, y + 0.5, t.vertex))

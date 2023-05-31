@@ -29,3 +29,9 @@ std::tuple<float, float, float> computeBarycentric2D(float x, float y, const glm
     float c3 = (x * (v[0].y - v[1].y) + (v[1].x - v[0].x) * y + v[0].x * v[1].y - v[1].x * v[0].y) / (v[2].x * (v[0].y - v[1].y) + (v[1].x - v[0].x) * v[2].y + v[0].x * v[1].y - v[1].x * v[0].y);
     return {c1, c2, c3};
 }
+
+glm::vec4 tovec4(glm::vec3 v, float w)
+{
+	glm::vec4 res(v.x, v.y, v.z, w);
+	return std::move(res);
+}

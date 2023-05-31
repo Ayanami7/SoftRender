@@ -6,6 +6,7 @@
 #include "stb_image.h"
 #include "stb_image_write.h"
 #include "Triangle.h"
+#include "Camera.h"
 #include <iostream>
 #include <vector>
 
@@ -24,19 +25,20 @@ public:
     void draw();
     void clearBuffer(BufferType type);
 
-    void setModelMatrix(const glm::mat4 &m) { model = m; }
-    void setViewMatrix(const glm::mat4 &v) { view = v; }
-    void setProjectionMatrix(const glm::mat4 &p) { projection = p; }
-    
-    std::vector<Triangle *> TriangleLists;
+    void setModelMatrix(const glm::mat4 &m) { modelMatrix = m; }
+	void setCamera(Camera *pos) { camera = pos; }
+
+	Camera *getCamera() { return camera; }
+
+	std::vector<Triangle *> TriangleLists;
+	int sum = 0;
 
 private:
-    int height;
+	Camera *camera;
+	int height;
     int width;
 
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 projection;
+    glm::mat4 modelMatrix;
 
     std::vector<float> depthBuffer;
     std::vector<glm::vec3> frameBuffer;
