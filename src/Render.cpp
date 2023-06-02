@@ -8,6 +8,11 @@ Render::Render(int w, int h) : width(w), height(h)
 	frameBuffer.resize(w * h);
     depthBuffer.resize(w * h);
     image_data = new unsigned char[w * h * 3];
+	texture = nullptr;
+
+	// default Shader func
+	vertexShader = ShaderFunc::vertexShader;
+	fragmentShader = ShaderFunc::normalFragmentShader;
 }
 
 Render::~Render()
@@ -68,18 +73,72 @@ void Render::imagePrint(std::string path)
     stbi_write_png(path.c_str(), width, height, 3, image_data, width * 3);
 }
 
-void Render::drawWireframe(Triangle &t, const glm::vec3 &color)
+void Render::drawWireframe()
 {
-	for (int i = 0; i < 3;i++)
+	glm::vec3 color(150, 150, 150);
+	if(camera == nullptr)
 	{
-		if(t.vertex[i].x <0||t.vertex[i].x>= width)
-			return;
-		if(t.vertex[i].y <0||t.vertex[i].y>= height)
-			return;
+		std::cout << "Error: Fail to load camera!" << std::endl;
+		return;
 	}
-	drawLine(t.a(), t.b(), color);
-    drawLine(t.b(), t.c(), color);
-    drawLine(t.c(), t.a(), color);
+
+	this->clearBuffer(BufferType::COLOR_BUF);
+	this->clearBuffer(BufferType::DEPTH_BUF);
+
+	//mvp transform
+	glm::mat4 viewMatrix = camera->getViewMatrix();
+	glm::mat4 projectionMatrix = camera->getProjectionMatrix();
+	glm::mat4 mvp = projectionMatrix * viewMatrix * modelMatrix;
+
+	for(auto &t : TriangleLists)
+    {
+		// use to judge triangle whether need to be rendered
+		bool flag = true;
+		glm::vec4 v[] =
+			{
+				mvp * tovec4(t->vertex[0], 1.0f),
+				mvp * tovec4(t->vertex[1], 1.0f),
+				mvp * tovec4(t->vertex[2], 1.0f)
+			};
+
+		for(auto &vec : v)
+		{
+			vec.x /= vec.w;
+            vec.y /= vec.w;
+            vec.z /= vec.w;
+		}
+
+		// Map[-1,1] to [width,height];
+		for(auto &vec : v)
+		{
+			vec.x = 0.5 * width * (vec.x + 1.0);
+			vec.y = 0.5 * height * (vec.y + 1.0);
+			float t1 = -(camera->getFar() + camera->getNear()) / 2;
+			float t2 = -(camera->getFar() - camera->getNear()) / 2;
+			vec.z = vec.z * t1 + t2;
+		}
+
+		for (int i = 0; i < 3;i++)
+		{
+			if (v[i].x < 0 || v[i].x >= width)
+			{
+				flag = false;
+				break;
+			}
+			if (v[i].y < 0 || v[i].y >= height)
+			{
+				flag = false;
+				break;
+			}
+		}
+
+		if(flag)
+		{
+			drawLine(v[0], v[1], color);
+			drawLine(v[1], v[2], color);
+			drawLine(v[2], v[0], color);
+		}
+	}
 }
 
 
@@ -104,12 +163,23 @@ void Render::clearBuffer(BufferType type)
 
 void Render::draw()
 {
+	if(vertexShader == nullptr)
+	{
+		std::cout << "Error: load vertexShader failed!" << std::endl;
+		return;
+	}
+	if(fragmentShader == nullptr)
+	{
+		std::cout << "Error: load fragmentShader failed!" << std::endl;
+		return;
+	}
 	if(camera == nullptr)
 	{
-		std::cout << "Error: Fail to load camera!" << std::endl;
+		std::cout << "Error: load camera failed!" << std::endl;
 		return;
 	}
 
+	this->clearBuffer(BufferType::COLOR_BUF);
 	this->clearBuffer(BufferType::DEPTH_BUF);
 
 	//mvp transform
@@ -119,12 +189,6 @@ void Render::draw()
 
     for(auto &t : TriangleLists)
     {
-		// auto ver_vec4 = t->vec4Array(1.0);
-
-		// //transform to camera coordinate system
-		// ver_vec4[0] = viewMatrix * modelMatrix * ver_vec4[0];
-		// ver_vec4[1] = viewMatrix * modelMatrix * ver_vec4[1];
-		// ver_vec4[2] = viewMatrix * modelMatrix * ver_vec4[2];
 		Triangle triangle = *t;
 		glm::vec4 v[] =
 			{
@@ -145,9 +209,9 @@ void Render::draw()
 
 		glm::vec4 n[] =
 			{
-				inverseTrans * tovec4(t->normal[0], 1.0f),
-				inverseTrans * tovec4(t->normal[1], 1.0f),
-				inverseTrans * tovec4(t->normal[2], 1.0f)
+				inverseTrans * tovec4(t->normal[0], 0.0f),
+				inverseTrans * tovec4(t->normal[1], 0.0f),
+				inverseTrans * tovec4(t->normal[2], 0.0f)
 			};
 
 		// Map[-1,1] to [width,height];
@@ -170,8 +234,7 @@ void Render::draw()
 			triangle.setNormal(i, glm::vec3(n[i].x, n[i].y, n[i].z));
 		}
 
-		glm::vec3 pen(100, 100, 100);
-		drawWireframe(triangle, pen);
+		rasterizeTriangle(triangle);
 	}
 }
 
@@ -193,19 +256,27 @@ void Render::rasterizeTriangle(const Triangle &t)
 				continue;
             if (insideTriangle(x + 0.5, y + 0.5, t.vertex))
             {
-                auto [a, b, c] = computeBarycentric2D(x + 0.5, y + 0.5, t.vertex);
-
+				// we only calculate the 2D pos
+				// We need to multiple 1/w to restore the true z value
+				// All in all, we need to use 2D x,y to interpolated calculate the z pos
+				auto [a, b, c] = computeBarycentric2D(x + 0.5, y + 0.5, t.vertex);
                 float z_interpolated = a * vex[0].z / vex[0].w + b * vex[1].z / vex[1].w + c * vex[2].z / vex[2].w;
+				float w_reciprocal = 1.0 / (a / vex[0].w + b / vex[1].w + c / vex[2].w);
+				z_interpolated *= w_reciprocal;
 
                 if (z_interpolated < depthBuffer[getPos(x, y)])
                 {
                     depthBuffer[getPos(x, y)] = z_interpolated;
-                    glm::vec3 color_i = a * t.vColor[0] + b * t.vColor[1] + c * t.vColor[2];
+					// glm::vec3 col(155, 155, 155);
+					// frameBuffer[getPos(x, y)] = col;
+					glm::vec3 color_i = a * t.vColor[0] + b * t.vColor[1] + c * t.vColor[2];
 					glm::vec3 normal_i = glm::normalize(a * t.normal[0] + b * t.normal[1] + c * t.normal[2]);
 					glm::vec2 texcoord_i = a * t.texCoord[0] + b * t.texCoord[1] + c * t.texCoord[2];
-					frameBuffer[getPos(x, y)] = color_i;
-					
-                }
+
+					fragmentShaderPayload payload(color_i, normal_i, texcoord_i, texture);
+					auto pixel_color = fragmentShader(payload);
+					frameBuffer[getPos(x, y)] = pixel_color;
+				}
             }
         }
     }

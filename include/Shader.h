@@ -23,7 +23,7 @@ struct vertexShaderPayload
    	glm::vec3 position;
 };
 
-namespace shaderFunc
+namespace ShaderFunc
 {
 	glm::vec3 vertexShader(const vertexShaderPayload &payload);
 

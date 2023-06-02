@@ -32,7 +32,6 @@ add_executable(SoftRender
     src/tools.cpp
 	src/Camera.cpp
 	src/Shader.cpp
-
 )
 
 target_include_directories(SoftRender
@@ -42,4 +41,6 @@ PUBLIC
     ext/glm/include
 )
 
-target_compile_options(SoftRender PUBLIC /utf-8) # MSVC unicode support
+if (MSVC)
+	target_compile_options(SoftRender PUBLIC /utf-8) # MSVC unicode support
+endif()

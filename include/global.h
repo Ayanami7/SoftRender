@@ -5,6 +5,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include <vector>
+#include <functional>
 #define MY_PI 3.14159
 
 //sign the rotate axis
