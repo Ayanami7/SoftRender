@@ -1,5 +1,6 @@
 #include "Render.h"
 #include "tools.h"
+#include "Shader.h"
 
 Render::Render(int w, int h) : width(w), height(h)
 {
@@ -79,7 +80,6 @@ void Render::drawWireframe(Triangle &t, const glm::vec3 &color)
 	drawLine(t.a(), t.b(), color);
     drawLine(t.b(), t.c(), color);
     drawLine(t.c(), t.a(), color);
-	std::cout << "Triangle" << sum++ << "draw finished!" << std::endl;
 }
 
 
@@ -155,10 +155,9 @@ void Render::draw()
 		{
 			vec.x = 0.5 * width * (vec.x + 1.0);
 			vec.y = 0.5 * height * (vec.y + 1.0);
-			auto t1 = -(camera->getFar() - camera->getNear()) / 2;
-			auto t2 = -(camera->getFar() + camera->getNear()) / 2;
-			vec.z = vec.z * t2 + t1;
-			//transform to negative value when calculate
+			float t1 = -(camera->getFar() + camera->getNear()) / 2;
+			float t2 = -(camera->getFar() - camera->getNear()) / 2;
+			vec.z = vec.z * t1 + t2;
 		}
 
 		for (int i = 0; i < 3;i++)
@@ -200,9 +199,12 @@ void Render::rasterizeTriangle(const Triangle &t)
 
                 if (z_interpolated < depthBuffer[getPos(x, y)])
                 {
-                    glm::vec3 color = a * t.vColor[0] + b * t.vColor[1] + c * t.vColor[2];
-                    frameBuffer[getPos(x, y)] = color;
                     depthBuffer[getPos(x, y)] = z_interpolated;
+                    glm::vec3 color_i = a * t.vColor[0] + b * t.vColor[1] + c * t.vColor[2];
+					glm::vec3 normal_i = glm::normalize(a * t.normal[0] + b * t.normal[1] + c * t.normal[2]);
+					glm::vec2 texcoord_i = a * t.texCoord[0] + b * t.texCoord[1] + c * t.texCoord[2];
+					frameBuffer[getPos(x, y)] = color_i;
+					
                 }
             }
         }

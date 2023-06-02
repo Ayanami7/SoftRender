@@ -16,7 +16,7 @@ Camera::Camera(glm::vec3 _lookAt, glm::vec3 _lookFrom, glm::vec3 _up, float _nea
 
 	// create view and projection Matrix
 	viewMatrix = glm::lookAt(_lookFrom, _lookAt, _up);
-	projectionMatrix = glm::perspective(_fov, aspectRatio, _near, _far);
+	projectionMatrix = glm::perspective(_fov, _aspectRatio, _near, _far);
 
 	origin = _lookFrom;
 	horizontal = float(viewHeight) * u;
