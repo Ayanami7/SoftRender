@@ -23,6 +23,9 @@ add_executable(SoftRender
     include/tools.h
 	include/Shader.h
 	include/Texture.h
+	include/Object.h
+	include/Scene.h
+	include/global.h
 
     src/stb_image_write.cpp
     src/stb_image.cpp
@@ -32,6 +35,8 @@ add_executable(SoftRender
     src/tools.cpp
 	src/Camera.cpp
 	src/Shader.cpp
+	src/Object.cpp
+	src/Scene.cpp
 )
 
 target_include_directories(SoftRender

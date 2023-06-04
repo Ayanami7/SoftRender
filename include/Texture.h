@@ -1,5 +1,7 @@
 #pragma once
 #include "global.h"
+#include "stb_image.h"
+#include <io.h>
 
 class Texture 
 {
@@ -10,9 +12,15 @@ private:
 public:
 	int width;
 	int height;
-	Texture(const std::string &name)
+	int channels;
+	Texture(const std::string &path)
 	{
-
+		image = stbi_load(path.c_str(), &width, &height, &channels, 3);
+		if(image == nullptr)
+		{
+			throw std::runtime_error("Error: load texture failed!");
+			return;
+		}
 	}
 
 	glm::vec3 getColor(float u, float v)

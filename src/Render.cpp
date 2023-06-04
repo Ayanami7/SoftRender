@@ -8,7 +8,9 @@ Render::Render(int w, int h) : width(w), height(h)
 	frameBuffer.resize(w * h);
     depthBuffer.resize(w * h);
     image_data = new unsigned char[w * h * 3];
-	texture = nullptr;
+
+	// create scene
+	scene = new Scene;
 
 	// default Shader func
 	vertexShader = ShaderFunc::vertexShader;
@@ -88,64 +90,64 @@ void Render::drawWireframe()
 	//mvp transform
 	glm::mat4 viewMatrix = camera->getViewMatrix();
 	glm::mat4 projectionMatrix = camera->getProjectionMatrix();
-	glm::mat4 mvp = projectionMatrix * viewMatrix * modelMatrix;
 
-	for(auto &t : TriangleLists)
-    {
-		// use to judge triangle whether need to be rendered
-		bool flag = true;
-		glm::vec4 v[] =
+	auto objectLists = scene->allObjects();
+	for (auto const &object : objectLists)
+	{
+		glm::mat4 modelMatrix = object.second->getModelMatirx();
+		glm::mat4 mvp = projectionMatrix * viewMatrix * modelMatrix;
+		auto TriangleLists = object.second->getTriangleLists();
+		for (auto const &t : TriangleLists)
+		{
+			// use to judge triangle whether need to be rendered
+			bool flag = true;
+			glm::vec4 v[] =
+				{
+					mvp * tovec4(t->vertex[0], 1.0f),
+					mvp * tovec4(t->vertex[1], 1.0f),
+					mvp * tovec4(t->vertex[2], 1.0f)};
+
+			for (auto &vec : v)
 			{
-				mvp * tovec4(t->vertex[0], 1.0f),
-				mvp * tovec4(t->vertex[1], 1.0f),
-				mvp * tovec4(t->vertex[2], 1.0f)
-			};
-
-		for(auto &vec : v)
-		{
-			vec.x /= vec.w;
-            vec.y /= vec.w;
-            vec.z /= vec.w;
-		}
-
-		// Map[-1,1] to [width,height];
-		for(auto &vec : v)
-		{
-			vec.x = 0.5 * width * (vec.x + 1.0);
-			vec.y = 0.5 * height * (vec.y + 1.0);
-			float t1 = -(camera->getFar() + camera->getNear()) / 2;
-			float t2 = -(camera->getFar() - camera->getNear()) / 2;
-			vec.z = vec.z * t1 + t2;
-		}
-
-		for (int i = 0; i < 3;i++)
-		{
-			if (v[i].x < 0 || v[i].x >= width)
-			{
-				flag = false;
-				break;
+				vec.x /= vec.w;
+				vec.y /= vec.w;
+				vec.z /= vec.w;
 			}
-			if (v[i].y < 0 || v[i].y >= height)
-			{
-				flag = false;
-				break;
-			}
-		}
 
-		if(flag)
-		{
-			drawLine(v[0], v[1], color);
-			drawLine(v[1], v[2], color);
-			drawLine(v[2], v[0], color);
+			// Map[-1,1] to [width,height];
+			for (auto &vec : v)
+			{
+				vec.x = 0.5 * width * (vec.x + 1.0);
+				vec.y = 0.5 * height * (vec.y + 1.0);
+
+				// Map z to [zNear,zFar]
+				float t1 = -(camera->getFar() + camera->getNear()) / 2;
+				float t2 = -(camera->getFar() - camera->getNear()) / 2;
+				vec.z = vec.z * t1 + t2;
+			}
+
+			for (int i = 0; i < 3; i++)
+			{
+				if (v[i].x < 0 || v[i].x >= width)
+				{
+					flag = false;
+					break;
+				}
+				if (v[i].y < 0 || v[i].y >= height)
+				{
+					flag = false;
+					break;
+				}
+			}
+
+			if (flag)
+			{
+				drawLine(v[0], v[1], color);
+				drawLine(v[1], v[2], color);
+				drawLine(v[2], v[0], color);
+			}
 		}
 	}
-}
-
-
-void Render::buildBuffer()
-{
-    depthBuffer.resize(width * height);
-    frameBuffer.resize(width * height);
 }
 
 void Render::clearBuffer(BufferType type)
@@ -185,60 +187,67 @@ void Render::draw()
 	//mvp transform
 	glm::mat4 viewMatrix = camera->getViewMatrix();
 	glm::mat4 projectionMatrix = camera->getProjectionMatrix();
-	glm::mat4 mvp = projectionMatrix * viewMatrix * modelMatrix;
 
-    for(auto &t : TriangleLists)
-    {
-		Triangle triangle = *t;
-		glm::vec4 v[] =
+	auto objectLists = scene->allObjects();
+	for (auto const &object : objectLists)
+	{
+		glm::mat4 modelMatrix = object.second->getModelMatirx();
+		auto TriangleLists = object.second->getTriangleLists();
+		for (auto const &t : TriangleLists)
+		{
+			glm::mat4 mvp = projectionMatrix * viewMatrix * modelMatrix;
+			Triangle triangle = *t;
+			glm::vec4 v[] =
+				{
+					mvp * tovec4(t->vertex[0], 1.0f),
+					mvp * tovec4(t->vertex[1], 1.0f),
+					mvp * tovec4(t->vertex[2], 1.0f)
+				};
+
+			for(auto &vec : v)
 			{
-				mvp * tovec4(t->vertex[0], 1.0f),
-				mvp * tovec4(t->vertex[1], 1.0f),
-				mvp * tovec4(t->vertex[2], 1.0f)
-			};
+				vec.x /= vec.w;
+				vec.y /= vec.w;
+				vec.z /= vec.w;
+			}
 
-		for(auto &vec : v)
-		{
-			vec.x /= vec.w;
-            vec.y /= vec.w;
-            vec.z /= vec.w;
-		}
+			//use inverse transponse matrix to make sure the normal vec correctly
+			glm::mat4 inverseTrans = glm::transpose(glm::inverse(viewMatrix * modelMatrix));
 
-		//use inverse transponse matrix to make sure the normal vec correctly
-		glm::mat4 inverseTrans = glm::transpose(glm::inverse(viewMatrix * modelMatrix));
+			glm::vec4 n[] =
+				{
+					inverseTrans * tovec4(t->normal[0], 0.0f),
+					inverseTrans * tovec4(t->normal[1], 0.0f),
+					inverseTrans * tovec4(t->normal[2], 0.0f)
+				};
 
-		glm::vec4 n[] =
+			// Map[-1,1] to [width,height];
+			for(auto &vec : v)
 			{
-				inverseTrans * tovec4(t->normal[0], 0.0f),
-				inverseTrans * tovec4(t->normal[1], 0.0f),
-				inverseTrans * tovec4(t->normal[2], 0.0f)
-			};
+				vec.x = 0.5 * width * (vec.x + 1.0);
+				vec.y = 0.5 * height * (vec.y + 1.0);
+				float t1 = -(camera->getFar() + camera->getNear()) / 2;
+				float t2 = -(camera->getFar() - camera->getNear()) / 2;
+				vec.z = vec.z * t1 + t2;
+			}
 
-		// Map[-1,1] to [width,height];
-		for(auto &vec : v)
-		{
-			vec.x = 0.5 * width * (vec.x + 1.0);
-			vec.y = 0.5 * height * (vec.y + 1.0);
-			float t1 = -(camera->getFar() + camera->getNear()) / 2;
-			float t2 = -(camera->getFar() - camera->getNear()) / 2;
-			vec.z = vec.z * t1 + t2;
+			for (int i = 0; i < 3;i++)
+			{
+				triangle.setVertex(i, glm::vec3(v[i].x, v[i].y, v[i].z));
+			}
+
+			for (int i = 0; i < 3;i++)
+			{
+				triangle.setNormal(i, glm::vec3(n[i].x, n[i].y, n[i].z));
+			}
+
+			rasterizeTriangle(triangle, object.second->getTexture());
 		}
-
-		for (int i = 0; i < 3;i++)
-		{
-			triangle.setVertex(i, glm::vec3(v[i].x, v[i].y, v[i].z));
-		}
-
-		for (int i = 0; i < 3;i++)
-		{
-			triangle.setNormal(i, glm::vec3(n[i].x, n[i].y, n[i].z));
-		}
-
-		rasterizeTriangle(triangle);
 	}
+
 }
 
-void Render::rasterizeTriangle(const Triangle &t)
+void Render::rasterizeTriangle(const Triangle &t, Texture *texture)
 {
     auto vex = t.vec4Array(1.0f);
     //bounding Box
