@@ -15,7 +15,7 @@ public:
 	int channels;
 	Texture(const std::string &path)
 	{
-		image = stbi_load(path.c_str(), &width, &height, &channels, 3);
+		image = stbi_load(path.c_str(), &width, &height, &channels, 0);
 		if(image == nullptr)
 		{
 			throw std::runtime_error("Error: load texture failed!");
@@ -25,11 +25,16 @@ public:
 
 	glm::vec3 getColor(float u, float v)
     {
-		// u = u - floor(u);
-		// v = v - floor(v);
-		// auto u_img = u * (width - 1);
-		// auto v_img = (1 - v) * (height - 1);
-		// auto color = img_data.at<cv::Vec3b>(v_img, u_img);
-        // return Eigen::Vector3f(color[0], color[1], color[2]);
-    }
+		// floor the value to avoid over the range
+		u = u - floor(u);
+		v = v - floor(v);
+		int x = static_cast<int>(u * (width - 1));
+		int y = static_cast<int>((1 - v) * (height - 1));
+		int index = (y * width + x) * channels;
+		// calculate the x,y of 3 channels image
+		float r = static_cast<float>(image[index]);
+		float g = static_cast<float>(image[index + 1]);
+		float b = static_cast<float>(image[index + 2]);
+		return glm::vec3(r, g, b);
+	}
 };

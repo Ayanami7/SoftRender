@@ -26,7 +26,7 @@ private:
 	std::vector<Triangle *> TriangleLists;		// vertex set
 	std::optional<Texture> texture;
 	float rotateAngle;
-	glm::vec3 scale;
+	glm::vec3 scaleRatio;
 	glm::vec3 pos;
 	glm::vec3 rotateAxis;
 

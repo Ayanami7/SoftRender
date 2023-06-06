@@ -180,7 +180,7 @@ void Render::draw()
 		std::cout << "Error: load camera failed!" << std::endl;
 		return;
 	}
-
+	// 
 	this->clearBuffer(BufferType::COLOR_BUF);
 	this->clearBuffer(BufferType::DEPTH_BUF);
 
@@ -197,6 +197,20 @@ void Render::draw()
 		{
 			glm::mat4 mvp = projectionMatrix * viewMatrix * modelMatrix;
 			Triangle triangle = *t;
+
+			std::array<glm::vec4, 3> m
+			{
+				viewMatrix * modelMatrix * tovec4(t->vertex[0], 1.0f),
+				viewMatrix * modelMatrix * tovec4(t->vertex[1], 1.0f),
+				viewMatrix * modelMatrix * tovec4(t->vertex[2], 1.0f)
+			};
+
+			std::array<glm::vec3, 3> viewspace_pos;
+			for (int i = 0; i < 3;i++)
+			{
+				viewspace_pos[i] = m[i];
+			}
+
 			glm::vec4 v[] =
 				{
 					mvp * tovec4(t->vertex[0], 1.0f),
@@ -226,8 +240,13 @@ void Render::draw()
 			{
 				vec.x = 0.5 * width * (vec.x + 1.0);
 				vec.y = 0.5 * height * (vec.y + 1.0);
-				float t1 = -(camera->getFar() + camera->getNear()) / 2;
-				float t2 = -(camera->getFar() - camera->getNear()) / 2;
+				// very very important
+				/* I find my model's direction,normal texture and perspective relation
+					all is not correct,because I am wrong when transform the z-value
+					map the z-value from [-1,1] to [zear,zfar]
+				*/
+				float t1 = (camera->getFar() - camera->getNear()) / 2;
+				float t2 = (camera->getFar() + camera->getNear()) / 2;
 				vec.z = vec.z * t1 + t2;
 			}
 
@@ -241,13 +260,13 @@ void Render::draw()
 				triangle.setNormal(i, glm::vec3(n[i].x, n[i].y, n[i].z));
 			}
 
-			rasterizeTriangle(triangle, object.second->getTexture());
+			rasterizeTriangle(triangle, viewspace_pos, object.second->getTexture());
 		}
 	}
 
 }
 
-void Render::rasterizeTriangle(const Triangle &t, Texture *texture)
+void Render::rasterizeTriangle(const Triangle &t, const std::array<glm::vec3, 3> &view_pos,Texture *texture)
 {
     auto vex = t.vec4Array(1.0f);
     //bounding Box
@@ -281,9 +300,11 @@ void Render::rasterizeTriangle(const Triangle &t, Texture *texture)
 					glm::vec3 color_i = a * t.vColor[0] + b * t.vColor[1] + c * t.vColor[2];
 					glm::vec3 normal_i = glm::normalize(a * t.normal[0] + b * t.normal[1] + c * t.normal[2]);
 					glm::vec2 texcoord_i = a * t.texCoord[0] + b * t.texCoord[1] + c * t.texCoord[2];
+					glm::vec3 viewPos_i = a * view_pos[0] + b * view_pos[1] + c * view_pos[2];
 
 					fragmentShaderPayload payload(color_i, normal_i, texcoord_i, texture);
-					auto pixel_color = fragmentShader(payload);
+					payload.viewPos = viewPos_i;
+					auto pixel_color = fragmentShader(payload, camera->eyePos());
 					frameBuffer[getPos(x, y)] = pixel_color;
 				}
             }

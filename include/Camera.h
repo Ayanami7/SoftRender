@@ -7,6 +7,7 @@ public:
 	Camera(glm::vec3 _lookAt, glm::vec3 _lookFrom, glm::vec3 _up, float _near, float _far, float _fov, float _ratio);
 	glm::mat4 getViewMatrix() { return viewMatrix; }
 	glm::mat4 getProjectionMatrix() { return projectionMatrix; }
+	glm::vec3 eyePos() { return origin; }
 	inline float getNear() { return zNear; }
 	inline float getFar() { return zFar; }
 

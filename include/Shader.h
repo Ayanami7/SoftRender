@@ -1,6 +1,7 @@
 #pragma once
 #include "global.h"
 #include "Texture.h"
+#include "Camera.h"
 
 struct fragmentShaderPayload
 {
@@ -27,6 +28,7 @@ namespace ShaderFunc
 {
 	glm::vec3 vertexShader(const vertexShaderPayload &payload);
 
-	glm::vec3 normalFragmentShader(const fragmentShaderPayload &payload);
+	glm::vec3 normalFragmentShader(const fragmentShaderPayload &payload, const glm::vec3& eye_pos);
 
+	glm::vec3 textureFragmentShader(const fragmentShaderPayload &payload, const glm::vec3& eye_pos);
 };

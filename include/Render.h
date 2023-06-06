@@ -20,14 +20,16 @@ public:
     void imagePrint(std::string path);                          //print image
     void drawLine(glm::vec3 startPos, glm::vec3 endPos, const glm::vec3 color);
     void drawWireframe();
-    void rasterizeTriangle(const Triangle &t, Texture *tex);
+    void rasterizeTriangle(const Triangle &t, const std::array<glm::vec3, 3> &view_pos,Texture *texture);
     void draw();
     void clearBuffer(BufferType type);
 
 	void setCamera(Camera *pos) { camera = pos; }
+	void setFragmentFunc(std::function<glm::vec3(fragmentShaderPayload, glm::vec3)> &func) { fragmentShader = func; }
 
 	Camera *getCamera() { return camera; }
 	Scene *getScene() { return scene; }
+
 
 private:
 	Camera *camera;			//camera object
@@ -40,5 +42,5 @@ private:
     unsigned char *image_data;
 
 	std::function<glm::vec3(vertexShaderPayload)> vertexShader;
-	std::function<glm::vec3(fragmentShaderPayload)> fragmentShader;
+	std::function<glm::vec3(fragmentShaderPayload, glm::vec3)> fragmentShader;
 };

@@ -13,6 +13,11 @@ public:
 	Object *getObject(const std::string &model_name);
 	std::map<std::string, Object *> &allObjects() { return ObjectLists; }
 
+	// change the status the object
+	void rotateObject(Object *obj, const float &angle, const glm::vec3 &axis);
+	void scaleObject(Object *obj, const glm::vec3 &ratio);
+	void translateObject(Object *obj, const glm::vec3 &pos);
+
 private:
 	std::map<std::string, Object *> ObjectLists;
 };
