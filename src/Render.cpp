@@ -304,7 +304,10 @@ void Render::rasterizeTriangle(const Triangle &t, const std::array<glm::vec3, 3>
 
 					fragmentShaderPayload payload(color_i, normal_i, texcoord_i, texture);
 					payload.viewPos = viewPos_i;
-					auto pixel_color = fragmentShader(payload, camera->eyePos());
+					payload.cameraPos = camera->eyePos();
+					payload.ambLight = scene->getAmbLight();
+					payload.lights = scene->allLights();
+					auto pixel_color = fragmentShader(payload);
 					frameBuffer[getPos(x, y)] = pixel_color;
 				}
             }
