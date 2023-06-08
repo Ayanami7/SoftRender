@@ -62,17 +62,31 @@ void Render::drawLine(glm::vec3 startPos, glm::vec3 endPos, const glm::vec3 colo
 void Render::imagePrint(std::string path)
 {
     //transform the buffer to iamge data
-    for (size_t i = 0; i < frameBuffer.size();i++)
+	for (size_t i = 0; i < frameBuffer.size();i++)
     {
         int x = i % width; // Calculates the position of pixels on the X-axis
         int y = static_cast<int>(height - 1 - i / width); // Calculates the position of pixels on the Y-axis
 
         // pixel save in png is per continue 3 unsigned char ragard as RGB
-        image_data[getPos(x, y) * 3] = static_cast<unsigned char>(frameBuffer[i].x);
-        image_data[getPos(x, y) * 3 + 1] = static_cast<unsigned char>(frameBuffer[i].y);
-        image_data[getPos(x, y) * 3 + 2] = static_cast<unsigned char>(frameBuffer[i].z);
-    }
-    stbi_write_png(path.c_str(), width, height, 3, image_data, width * 3);
+		// when use function static_cast transform float to unsigned char
+		// they will be overflow then the high light part of picture will produce a hole
+		// we need to cut the float at 255 explicitly there
+		if (frameBuffer[i].x >= 255.0f)
+			image_data[getPos(x, y) * 3] = 255;
+		else
+			image_data[getPos(x, y) * 3] = static_cast<unsigned char>(frameBuffer[i].x);
+
+		if (frameBuffer[i].y >= 255.0f)
+			image_data[getPos(x, y) * 3 + 1] = 255;
+		else
+			image_data[getPos(x, y) * 3 + 1] = static_cast<unsigned char>(frameBuffer[i].y);
+
+		if (frameBuffer[i].z >= 255.0f)
+			image_data[getPos(x, y) * 3 + 2] = 255;
+		else
+        	image_data[getPos(x, y) * 3 + 2] = static_cast<unsigned char>(frameBuffer[i].z);
+	}
+	stbi_write_jpg(path.c_str(), width, height, 3, image_data, width * 3);
 }
 
 void Render::drawWireframe()
@@ -249,7 +263,7 @@ void Render::draw()
 				float t2 = (camera->getFar() + camera->getNear()) / 2;
 				vec.z = vec.z * t1 + t2;
 			}
-
+			
 			for (int i = 0; i < 3;i++)
 			{
 				triangle.setVertex(i, glm::vec3(v[i].x, v[i].y, v[i].z));
@@ -259,6 +273,11 @@ void Render::draw()
 			{
 				triangle.setNormal(i, glm::vec3(n[i].x, n[i].y, n[i].z));
 			}
+
+			// set the color for default value to test phong shader
+			triangle.setColor(0, {148, 121.0, 92.0});
+			triangle.setColor(1, {148, 121.0, 92.0});
+			triangle.setColor(2, {148, 121.0, 92.0});
 
 			rasterizeTriangle(triangle, viewspace_pos, object.second->getTexture());
 		}
@@ -295,8 +314,6 @@ void Render::rasterizeTriangle(const Triangle &t, const std::array<glm::vec3, 3>
                 if (z_interpolated < depthBuffer[getPos(x, y)])
                 {
                     depthBuffer[getPos(x, y)] = z_interpolated;
-					// glm::vec3 col(155, 155, 155);
-					// frameBuffer[getPos(x, y)] = col;
 					glm::vec3 color_i = a * t.vColor[0] + b * t.vColor[1] + c * t.vColor[2];
 					glm::vec3 normal_i = glm::normalize(a * t.normal[0] + b * t.normal[1] + c * t.normal[2]);
 					glm::vec2 texcoord_i = a * t.texCoord[0] + b * t.texCoord[1] + c * t.texCoord[2];
