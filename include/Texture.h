@@ -15,7 +15,7 @@ public:
 	int channels;
 	Texture(const std::string &path)
 	{
-		image = stbi_load(path.c_str(), &width, &height, &channels, 0);
+		image = stbi_load(path.c_str(), &width, &height, &channels, 3);
 		if(image == nullptr)
 		{
 			throw std::runtime_error("Error: load texture failed!");
@@ -30,7 +30,7 @@ public:
 		v = v - floor(v);
 		int x = static_cast<int>(u * (width - 1));
 		int y = static_cast<int>((1 - v) * (height - 1));
-		int index = (y * width + x) * channels;
+		int index = (y * width + x) * 3;
 		// calculate the x,y of 3 channels image
 		float r = static_cast<float>(image[index]);
 		float g = static_cast<float>(image[index + 1]);

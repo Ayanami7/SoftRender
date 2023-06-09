@@ -240,7 +240,7 @@ void Render::draw()
 			}
 
 			//use inverse transponse matrix to make sure the normal vec correctly
-			glm::mat4 inverseTrans = glm::transpose(glm::inverse(viewMatrix * modelMatrix));
+			glm::mat4 inverseTrans = glm::inverse(glm::transpose(viewMatrix * modelMatrix));
 
 			glm::vec4 n[] =
 				{
@@ -331,3 +331,4 @@ void Render::rasterizeTriangle(const Triangle &t, const std::array<glm::vec3, 3>
         }
     }
 }
+

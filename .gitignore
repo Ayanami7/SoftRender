@@ -2,4 +2,5 @@
 /build
 /bin
 /output
+/cache
 /src/main.cpp

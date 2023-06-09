@@ -4,6 +4,7 @@
 #include "Camera.h"
 #include "Light.h"
 #include <map>
+#include <cmath>
 
 struct fragmentShaderPayload
 {
@@ -36,4 +37,10 @@ namespace ShaderFunc
 	glm::vec3 normalFragmentShader(const fragmentShaderPayload &payload);
 
 	glm::vec3 textureFragmentShader(const fragmentShaderPayload &payload);
+
+	glm::vec3 phongFragmentShader(const fragmentShaderPayload &payload);
+
+	glm::vec3 bumpFragmentShader(const fragmentShaderPayload &payload);
+
+	glm::vec3 displacementFragmentShader(const fragmentShaderPayload &payload);
 };
