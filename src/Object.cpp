@@ -20,8 +20,9 @@ Object::Object(const std::string &model_path)
 			Triangle *t = new Triangle;
 			// 3 vertexes
 			for (int j = 0; j < 3; j++)
-			{
-				t->setVertex(j, glm::vec3(mesh.Vertices[i + j].Position.X, mesh.Vertices[i + j].Position.Y, mesh.Vertices[i + j].Position.Z));
+			{	
+				// transform the 3D coordinate to the 4D coordinate
+				t->setVertex(j, glm::vec4(mesh.Vertices[i + j].Position.X, mesh.Vertices[i + j].Position.Y, mesh.Vertices[i + j].Position.Z, 1.0f));
 				t->setNormal(j, glm::vec3(mesh.Vertices[i + j].Normal.X, mesh.Vertices[i + j].Normal.Y, mesh.Vertices[i + j].Normal.Z));
 				t->setTexCoord(j, glm::vec2(mesh.Vertices[i + j].TextureCoordinate.X, mesh.Vertices[i + j].TextureCoordinate.Y));
 			}

@@ -10,6 +10,8 @@ public:
 	glm::vec3 eyePos() { return origin; }
 	inline float getNear() { return zNear; }
 	inline float getFar() { return zFar; }
+	inline float getRatio() { return aspectRatio; }
+	inline float getFov() { return fov; }
 
 private:
 	float zNear;					//positive value

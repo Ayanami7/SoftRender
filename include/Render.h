@@ -22,8 +22,11 @@ public:
     void drawWireframe();
     void rasterizeTriangle(const Triangle &t, const std::array<glm::vec3, 3> &view_pos,Texture *texture);
     void draw();
+
+	// will set the framBuffer at [scene->backColor]
     void clearBuffer(BufferType type);
 
+	void setScene(Scene *_scene) { scene = _scene; }
 	void setCamera(Camera *pos) { camera = pos; }
 	void setFragmentFunc(std::function<glm::vec3(fragmentShaderPayload)> &func) { fragmentShader = func; }
 
@@ -31,14 +34,19 @@ public:
 	Scene *getScene() { return scene; }
 
 
+	// ray tracing
+	void render();
+	glm::vec3 castRay(const glm::vec3 _ori, const glm::vec3 _dir, int depth);
+
 private:
-	Camera *camera;			//camera object
-	Scene *scene;
+	Camera *camera;
+	Scene *scene;			
 	int height;
     int width;
+	int recurveDepth = 5;		// castRay recurve depth
 
-    std::vector<float> depthBuffer;
-    std::vector<glm::vec3> frameBuffer;
+	std::vector<float> depthBuffer;
+    std::vector<glm::vec3> frameBuffer;		// save the color float 0-255 as RGB
     unsigned char *image_data;
 
 	std::function<glm::vec3(vertexShaderPayload)> vertexShader;

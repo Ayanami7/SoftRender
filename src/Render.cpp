@@ -10,7 +10,7 @@ Render::Render(int w, int h) : width(w), height(h)
     image_data = new unsigned char[w * h * 3];
 
 	// create scene
-	scene = new Scene;
+	scene = nullptr;
 
 	// default Shader func
 	vertexShader = ShaderFunc::vertexShader;
@@ -19,7 +19,7 @@ Render::Render(int w, int h) : width(w), height(h)
 
 Render::~Render()
 {
-	
+	delete image_data;
 }
 
 void Render::drawLine(glm::vec3 startPos, glm::vec3 endPos, const glm::vec3 color)
@@ -168,8 +168,8 @@ void Render::clearBuffer(BufferType type)
 {
     if (type == BufferType::COLOR_BUF)
     {
-        std::fill(frameBuffer.begin(), frameBuffer.end(), glm::vec3(0));
-    }
+		std::fill(frameBuffer.begin(), frameBuffer.end(), this->scene->getBackColor());
+	}
 
     if (type == BufferType::DEPTH_BUF)
     {
@@ -214,22 +214,22 @@ void Render::draw()
 
 			std::array<glm::vec4, 3> m
 			{
-				viewMatrix * modelMatrix * tovec4(t->vertex[0], 1.0f),
-				viewMatrix * modelMatrix * tovec4(t->vertex[1], 1.0f),
-				viewMatrix * modelMatrix * tovec4(t->vertex[2], 1.0f)
+				viewMatrix * modelMatrix * t->vertex[0],
+				viewMatrix * modelMatrix * t->vertex[1],
+				viewMatrix * modelMatrix * t->vertex[2]
 			};
 
 			std::array<glm::vec3, 3> viewspace_pos;
 			for (int i = 0; i < 3;i++)
 			{
-				viewspace_pos[i] = m[i];
+				viewspace_pos[i] = glm::vec3(m[i].x, m[i].y, m[i].z);
 			}
 
 			glm::vec4 v[] =
 				{
-					mvp * tovec4(t->vertex[0], 1.0f),
-					mvp * tovec4(t->vertex[1], 1.0f),
-					mvp * tovec4(t->vertex[2], 1.0f)
+					mvp * t->vertex[0],
+					mvp * t->vertex[1],
+					mvp * t->vertex[2]
 				};
 
 			for(auto &vec : v)
@@ -237,6 +237,7 @@ void Render::draw()
 				vec.x /= vec.w;
 				vec.y /= vec.w;
 				vec.z /= vec.w;
+				// don't change the w to transfer the w-value to rasterizer
 			}
 
 			//use inverse transponse matrix to make sure the normal vec correctly
@@ -266,7 +267,7 @@ void Render::draw()
 			
 			for (int i = 0; i < 3;i++)
 			{
-				triangle.setVertex(i, glm::vec3(v[i].x, v[i].y, v[i].z));
+				triangle.setVertex(i, v[i]);
 			}
 
 			for (int i = 0; i < 3;i++)
@@ -287,8 +288,8 @@ void Render::draw()
 
 void Render::rasterizeTriangle(const Triangle &t, const std::array<glm::vec3, 3> &view_pos,Texture *texture)
 {
-    auto vex = t.vec4Array(1.0f);
-    //bounding Box
+	auto vex = t.vec4Array();
+	//bounding Box
     int max_x = static_cast<int>(std::max(vex[0].x, std::max(vex[1].x, vex[2].x)) + 2);
     int min_x = static_cast<int>(std::min(vex[0].x, std::min(vex[1].x, vex[2].x)) - 2);
 	int max_y = static_cast<int>(std::max(vex[0].y, std::max(vex[1].y, vex[2].y)) + 2);
@@ -307,11 +308,10 @@ void Render::rasterizeTriangle(const Triangle &t, const std::array<glm::vec3, 3>
 				// We need to multiple 1/w to restore the true z value
 				// All in all, we need to use 2D x,y to interpolated calculate the z pos
 				auto [a, b, c] = computeBarycentric2D(x + 0.5, y + 0.5, t.vertex);
-                float z_interpolated = a * vex[0].z / vex[0].w + b * vex[1].z / vex[1].w + c * vex[2].z / vex[2].w;
-				float w_reciprocal = 1.0 / (a / vex[0].w + b / vex[1].w + c / vex[2].w);
-				z_interpolated *= w_reciprocal;
-
-                if (z_interpolated < depthBuffer[getPos(x, y)])
+				float numerator = a * vex[0].z / vex[0].w + b * vex[1].z / vex[1].w + c * vex[2].z / vex[2].w;
+				float denominator = a / vex[0].w + b / vex[1].w + c / vex[2].w;
+				float z_interpolated = numerator / denominator;
+				if (z_interpolated < depthBuffer[getPos(x, y)])
                 {
                     depthBuffer[getPos(x, y)] = z_interpolated;
 					glm::vec3 color_i = a * t.vColor[0] + b * t.vColor[1] + c * t.vColor[2];
@@ -332,3 +332,35 @@ void Render::rasterizeTriangle(const Triangle &t, const std::array<glm::vec3, 3>
     }
 }
 
+glm::vec3 Render::castRay(const glm::vec3 _ori, const glm::vec3 _dir, int depth)
+{
+	// use depth to control recursion depth,max-value default as 5
+	if (depth < this->recurveDepth)
+		return glm::vec3(0.0, 0.0, 0.0);
+	glm::vec3 hitColor = scene->getBackColor();
+
+	return glm::vec3(0, 0, 0);
+}
+
+// render the picture based on ray tracing 
+void Render::render()
+{
+	glm::vec3 eyePos = camera->eyePos();
+	float ratio = camera->getRatio();
+	float theta = camera->getFov() * MY_PI / 180.0f;
+	float scale = std::tan(theta / 2);
+
+	for (int j = 0; j < height; j++)
+	{
+		for (int i = 0; i < width; i++)
+		{
+			float x, y;
+			x = (2 * (i + 0.5f) / height - 1) * scale * ratio;
+			y = (2 * (j + 0.5f) / width - 1) * scale;
+			y = -y;
+
+			glm::vec3 dir = glm::normalize(glm::vec3(x, y, -1));
+			
+		}
+	}
+}

@@ -20,7 +20,10 @@ public:
 	// Ambient light setter/getter
 	void setAmbLight(const glm::vec3 &_ambLight) { ambLight = _ambLight; }
 	glm::vec3 &getAmbLight() { return ambLight; }
-
+	// background color setter/getter
+	void setBackColor(const glm::vec3 &_color) { backColor = _color; }
+	glm::vec3 &getBackColor() { return backColor; }
+	
 	std::map<std::string, Object *> &allObjects(){ return ObjectLists; }
 	std::map<std::string, Light *> &allLights() { return LightLists; }
 
@@ -30,7 +33,8 @@ public:
 	void translateObject(Object *obj, const glm::vec3 &pos);
 
 private:
-	glm::vec3 ambLight = {0, 0, 0};			// Ambient light,default as 0
+	glm::vec3 backColor = glm::vec3(0, 0, 0);	// background color,default as black
+	glm::vec3 ambLight = glm::vec3(0, 0, 0);	// Ambient light,default as 0
 	std::map<std::string, Object *> ObjectLists;		//object list
 	std::map<std::string, Light *> LightLists;		// point light list
 };
