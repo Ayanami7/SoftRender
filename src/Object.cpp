@@ -30,7 +30,7 @@ Object::Object(const std::string &model_path)
 		}
 	}
 	// init pos and X axis
-	pos = glm::vec3(0.0, 0.0, 0.0);
+	position = glm::vec3(0.0, 0.0, 0.0);
 	rotateAxis = glm::vec3(0.0, 1.0, 0.0);
 	scaleRatio = glm::vec3(1.0, 1.0, 1.0);
 	rotateAngle = 0;
@@ -47,7 +47,7 @@ Object::~Object()
 glm::mat4 Object::getModelMatirx()
 {
 	glm::mat4 res(1.0f);
-	res = glm::translate(res, pos);
+	res = glm::translate(res, position);
 	res = glm::rotate(res, glm::radians(rotateAngle), rotateAxis);
 	res = glm::scale(res, scaleRatio);
 	return res;

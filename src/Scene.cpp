@@ -7,28 +7,27 @@ Scene::Scene()
 
 Scene::~Scene()
 {
-
+	for (auto obj : ObjectLists)
+	{
+		delete obj.second;
+	}
+	ObjectLists.clear();
+	// destory the whole map
 }
 
-void Scene::addObject(const std::string &model_name, const std::string &model_path)
+void Scene::addObject(const std::string &model_name, Object *obj)
 {
 	if(ObjectLists.count(model_name))
 	{
 		std::cout << "Error: can't add Object: " << model_name << " has existed!" << std::endl;
 		return;
 	}
-	try
+	if (obj == nullptr)
 	{
-		Object *obj = new Object(model_path);
-		ObjectLists[model_name] = obj;
-	}
-	catch(const std::runtime_error &e)
-	{
-		std::cerr << e.what() << "  Model Name: " << model_name << std::endl;
+		std::cout << "Error: can't add Object: " << model_name << " not existed!" << std::endl;
 		return;
 	}
-	
-
+	ObjectLists[model_name] = obj;
 }
 
 void Scene::deleteObject(const std::string &model_name)
@@ -53,18 +52,18 @@ Object *Scene::getObject(const std::string &model_name)
 
 void Scene::rotateObject(Object *obj, const float &angle, const glm::vec3 &axis)
 {
-	obj->rotateAngle = angle;
-	obj->rotateAxis = axis;
+	obj->setRotateAngle(angle);
+	obj->setRotateAxis(axis);
 }
 
 void Scene::scaleObject(Object *obj, const glm::vec3 &ratio)
 {
-	obj->scaleRatio = ratio;
+	obj->setScaleRatio(ratio);
 } 
 
 void Scene::translateObject(Object *obj, const glm::vec3 &pos)
 {
-	obj->pos = pos;
+	obj->setPosition(pos);
 }
 
 void Scene::addLight(const std::string &light_name, const glm::vec3 &_position, const glm::vec3 &_intensity)

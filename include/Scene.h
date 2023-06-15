@@ -1,6 +1,7 @@
 #pragma once
 #include "global.h"
 #include "Object.h"
+#include "Model.h"
 #include "Light.h"
 #include <map>
 #include <vector>
@@ -11,7 +12,7 @@ public:
 	Scene();
 	~Scene();
 	// Object API
-	void addObject(const std::string &model_name, const std::string &model_path);
+	void addObject(const std::string &model_name, Object *obj);
 	void deleteObject(const std::string &model_name);
 	Object *getObject(const std::string &model_name);
 	// Point Light API

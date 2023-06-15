@@ -117,10 +117,10 @@ void Render::drawWireframe()
 			bool flag = true;
 			glm::vec4 v[] =
 				{
-					mvp * tovec4(t->vertex[0], 1.0f),
-					mvp * tovec4(t->vertex[1], 1.0f),
-					mvp * tovec4(t->vertex[2], 1.0f)};
-
+					mvp * t->vertex[0],
+					mvp * t->vertex[1],
+					mvp * t->vertex[2]
+				};
 			for (auto &vec : v)
 			{
 				vec.x /= vec.w;
