@@ -1,6 +1,7 @@
 #pragma once 
 #include "global.h"
 #include "Texture.h"
+#include "Material.h"
 #include "Triangle.h"
 #include <optional>
 
@@ -10,30 +11,33 @@ public:
 	Object(const std::string &model_path);
 	virtual ~Object();
 
-	Texture *getTexture()
-	{
-		return (texture.has_value() ? &*texture : nullptr);
-	}
-	std::vector<Triangle *> &getTriangleLists() { return TriangleLists; }
 	glm::mat4 getModelMatirx();
-	virtual void loadTexture(const std::string &path)
+
+	inline virtual void loadTexture(const std::string &path)
 	{
-		texture = Texture(path);
+		texture = new Texture(path);
 	}
+	inline Texture *getTexture() { return texture; }
 
-	void setRotateAngle(const float angle) { rotateAngle = angle; }
-	void setScaleRatio(const glm::vec3 ratio) { scaleRatio = ratio; }
-	void setPosition(const glm::vec3 pos) { position = pos; }
-	void setRotateAxis(const glm::vec3 axis) { rotateAxis = axis; }
+	inline void setMaterial(Material *m) { material = m; }
+	inline Material *getMaterial() { return material; }
 
-	float getRotateAngle() { return rotateAngle; }
-	glm::vec3 getScaleRatio() { return scaleRatio; }
-	glm::vec3 getPosition() { return position;}
-	glm::vec3 getRotateAxis() { return rotateAxis; }
+	inline std::vector<Triangle *> &getTriangleLists() { return TriangleLists; }
+
+	inline void setRotateAngle(const float &angle) { rotateAngle = angle; }
+	inline void setScaleRatio(const glm::vec3 &ratio) { scaleRatio = ratio; }
+	inline void setPosition(const glm::vec3 &pos) { position = pos; }
+	inline void setRotateAxis(const glm::vec3 &axis) { rotateAxis = axis; }
+
+	inline float getRotateAngle() { return rotateAngle; }
+	inline glm::vec3 getScaleRatio() { return scaleRatio; }
+	inline glm::vec3 getPosition() { return position;}
+	inline glm::vec3 getRotateAxis() { return rotateAxis; }
 
 protected:
 	std::vector<Triangle *> TriangleLists;		// vertex set
-	std::optional<Texture> texture;
+	Texture* texture;
+	Material* material;
 	float rotateAngle;
 	glm::vec3 scaleRatio;
 	glm::vec3 position;

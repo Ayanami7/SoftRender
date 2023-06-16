@@ -10,6 +10,14 @@
 #include "Scene.h"
 #include <functional>
 
+struct HitRecord
+{
+	glm::vec3 point;
+	glm::vec3 normal;
+	float time;
+	Object *obj;
+};
+
 class Render
 {
 public:
@@ -43,8 +51,8 @@ private:
 	Scene *scene;			
 	int height;
     int width;
-	int recurveDepth = 5;		// castRay recurve depth
-
+	int recurveDepth = 5;		// control castRay recurve depth
+	
 	std::vector<float> depthBuffer;
     std::vector<glm::vec3> frameBuffer;		// save the color float 0-255 as RGB
     unsigned char *image_data;

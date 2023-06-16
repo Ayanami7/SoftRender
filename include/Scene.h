@@ -3,8 +3,6 @@
 #include "Object.h"
 #include "Model.h"
 #include "Light.h"
-#include <map>
-#include <vector>
 
 class Scene
 {

@@ -27,6 +27,7 @@ add_executable(SoftRender
 	include/Scene.h
 	include/global.h
 	include/Model.h
+	include/Material.h
 
     src/stb_image_write.cpp
     src/stb_image.cpp
@@ -34,7 +35,6 @@ add_executable(SoftRender
     src/Render.cpp
     src/Triangle.cpp
     src/tools.cpp
-	src/Camera.cpp
 	src/Shader.cpp
 	src/Object.cpp
 	src/Scene.cpp

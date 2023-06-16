@@ -1,7 +1,6 @@
 #pragma once
 #include "global.h"
 #include "stb_image.h"
-#include <io.h>
 
 class Texture 
 {

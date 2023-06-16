@@ -33,8 +33,7 @@ Object::Object(const std::string &model_path)
 	position = glm::vec3(0.0, 0.0, 0.0);
 	rotateAxis = glm::vec3(0.0, 1.0, 0.0);
 	scaleRatio = glm::vec3(1.0, 1.0, 1.0);
-	rotateAngle = 0;
-
+	rotateAngle = 0.0f;
 }
 
 Object::~Object()
