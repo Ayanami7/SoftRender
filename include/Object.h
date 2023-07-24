@@ -13,12 +13,14 @@ public:
 
 	glm::mat4 getModelMatirx();
 
+	bool intersect(const Ray &ray, float tNear, uint32_t &index, glm::vec2 &uv);
+	void getSurfaceProperty(const uint32_t index, const glm::vec2 uv, glm::vec3 &normal, glm::vec2 st);
+
 	inline virtual void loadTexture(const std::string &path)
 	{
 		texture = new Texture(path);
 	}
 	inline Texture *getTexture() { return texture; }
-
 	inline void setMaterial(Material *m) { material = m; }
 	inline Material *getMaterial() { return material; }
 

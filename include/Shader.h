@@ -22,7 +22,7 @@ struct fragmentShaderPayload
 	glm::vec3 cameraPos;		// eye position
 	glm::vec3 ambLight;			// Ambient light
 	Texture *texture;			// texture pointer
-	std::map<std::string, Light *> lights;	// Point Light set
+	std::vector<Light *> lights; // Point Light set
 };
 
 struct vertexShaderPayload

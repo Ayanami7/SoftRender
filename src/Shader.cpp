@@ -41,11 +41,11 @@ glm::vec3 ShaderFunc::textureFragmentShader(const fragmentShaderPayload &payload
 	auto lights = payload.lights;
 	for(auto &light :lights)
 	{
-		glm::vec3 l = glm::normalize((light.second->position - point));	// light
+		glm::vec3 l = glm::normalize((light->position - point));	// light
 		glm::vec3 v = glm::normalize((cameraPos - point));		// view dir
 		glm::vec3 h = glm::normalize((l + v));
-		float r_2 = glm::dot((light.second->position - point), (light.second->position - point));
-		glm::vec3 t = light.second->intensity / r_2;
+		float r_2 = glm::dot((light->position - point), (light->position - point));
+		glm::vec3 t = light->intensity / r_2;
 		glm::vec3 ld = glm::vec3(kd.x * t.x, kd.y * t.y, kd.z * t.z) * std::max(0.0f, glm::dot(normal, l));
 		glm::vec3 ls = glm::vec3(ks.x * t.x, ks.y * t.y, ks.z * t.z) * std::pow(std::max(0.0f, glm::dot(normal, h)), p);
 
@@ -78,12 +78,12 @@ glm::vec3 ShaderFunc::phongFragmentShader(const fragmentShaderPayload &payload)
 	auto lights = payload.lights;
 	for(auto &light :lights)
 	{
-		glm::vec3 l = glm::normalize((light.second->position - point));	// light
+		glm::vec3 l = glm::normalize((light->position - point));	// light
 		glm::vec3 v = glm::normalize((cameraPos - point));		// view dir
 		glm::vec3 h = glm::normalize((l + v));
 
-		float r_2 = glm::dot((light.second->position - point), (light.second->position - point)); 
-		glm::vec3 t = light.second->intensity / r_2;
+		float r_2 = glm::dot((light->position - point), (light->position - point)); 
+		glm::vec3 t = light->intensity / r_2;
 		glm::vec3 ld = glm::vec3(kd.x * t.x, kd.y * t.y, kd.z * t.z) * std::max(0.0f, glm::dot(normal, l));
 		glm::vec3 ls = glm::vec3(ks.x * t.x, ks.y * t.y, ks.z * t.z) * std::pow(std::max(0.0f, glm::dot(normal, h)), p);
 
@@ -178,14 +178,14 @@ glm::vec3 ShaderFunc::displacementFragmentShader(const fragmentShaderPayload &pa
 	glm::vec3 resultColor = {0, 0, 0};
 	for(auto &light :lights)
 	{
-		glm::vec3 l = glm::normalize((light.second->position - point));	// light
+		glm::vec3 l = glm::normalize((light->position - point));	// light
 		glm::vec3 v = glm::normalize((cameraPos - point));		// view dir
 		glm::vec3 h = glm::normalize((l + v));
 
-		float r_2 = glm::dot((light.second->position - point), (light.second->position - point));
+		float r_2 = glm::dot((light->position - point), (light->position - point));
 
-		glm::vec3 ld = kd * (light.second->intensity / r_2) * std::max(0.0f, glm::dot(normal, l));
-		glm::vec3 ls = ks * (light.second->intensity / r_2) * std::pow(std::max(0.0f, glm::dot(normal, h)), p);
+		glm::vec3 ld = kd * (light->intensity / r_2) * std::max(0.0f, glm::dot(normal, l));
+		glm::vec3 ls = ks * (light->intensity / r_2) * std::pow(std::max(0.0f, glm::dot(normal, h)), p);
 
 		resultColor += (ld + ls);
 	}

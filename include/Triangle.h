@@ -3,6 +3,7 @@
 */
 #pragma once
 #include "global.h"
+#include "Ray.h"
 #include <array>
 
 class Triangle
@@ -26,5 +27,7 @@ public:
     void setColor(int index, const glm::vec3 &v_color);
     void setTexCoord(int index, const glm::vec2 &t_coord);
 
-    std::array<glm::vec4, 3> vec4Array() const;
+	bool rayTriangleIntersect(const Ray &ray, float &tnear, float &u, float &v);
+
+	std::array<glm::vec4, 3> vec4Array() const;
 };

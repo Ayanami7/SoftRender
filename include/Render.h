@@ -12,9 +12,9 @@
 
 struct HitRecord
 {
-	glm::vec3 point;
-	glm::vec3 normal;
-	float time;
+	float tNear;
+	uint32_t index;
+	glm::vec2 uv;
 	Object *obj;
 };
 
@@ -44,7 +44,7 @@ public:
 
 	// ray tracing
 	void render();
-	glm::vec3 castRay(const glm::vec3 _ori, const glm::vec3 _dir, int depth);
+	glm::vec3 castRay(const Ray &ray, int depth);
 
 private:
 	Camera *camera;

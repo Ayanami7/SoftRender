@@ -1,4 +1,5 @@
 #include "Triangle.h"
+#include "tools.h"
 
 Triangle::Triangle(const glm::vec4 &v_a, const glm::vec4 &v_b, const glm::vec4 &v_c)
 {
@@ -45,4 +46,28 @@ std::array<glm::vec4, 3> Triangle::vec4Array() const
 			vertex[0], vertex[1], vertex[2]
 		};
 	return res;
+}
+
+// Möller-Trumbore algorithm
+bool Triangle::rayTriangleIntersect(const Ray &ray, float &tnear, float &u, float &v)
+{
+	glm::vec3 E1, E2, S, S1, S2, re;
+	glm::vec3 v0 = tovec3(vertex[0]);
+	glm::vec3 v1 = tovec3(vertex[1]);
+	glm::vec3 v2 = tovec3(vertex[2]);
+
+	E1 = v1 - v0;
+	E2 = v2 - v0;
+	S = ray.origin - v0;
+	S1 = glm::cross(ray.direction, E2);
+	S1 = glm::cross(S, E1);
+	re = glm::vec3(glm::dot(S2, E2), glm::dot(S1, S), glm::dot(S2, ray.direction));
+	re = re / glm::dot(S1, E1);
+	tnear = re.x;
+	u = re.y;
+	v = re.z;
+
+	if (tnear > 0 && v >= 0 && v <= 1 && u >= 0 && u <= 1)
+		return true;
+	return false;
 }

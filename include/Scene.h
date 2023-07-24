@@ -22,9 +22,27 @@ public:
 	// background color setter/getter
 	void setBackColor(const glm::vec3 &_color) { backColor = _color; }
 	glm::vec3 &getBackColor() { return backColor; }
-	
-	std::map<std::string, Object *> &allObjects(){ return ObjectLists; }
-	std::map<std::string, Light *> &allLights() { return LightLists; }
+
+	std::vector<Object *> allObjects()
+	{
+		std::vector<Object *> ObjectLists;
+		ObjectLists.reserve(ObjectMap.size());
+		for (auto &item : ObjectMap)
+		{
+			ObjectLists.push_back(item.second);
+		}
+		return ObjectLists;
+	}
+	std::vector<Light *> allLights()
+	{
+		std::vector<Light *> LightLists;
+		LightLists.reserve(ObjectMap.size());
+		for (auto &item : LightMap)
+		{
+			LightLists.push_back(item.second);
+		}
+		return LightLists;
+	}
 
 	// change the status the object
 	void rotateObject(Object *obj, const float &angle, const glm::vec3 &axis);
@@ -34,6 +52,6 @@ public:
 private:
 	glm::vec3 backColor = glm::vec3(0, 0, 0);	// background color,default as black
 	glm::vec3 ambLight = glm::vec3(0, 0, 0);	// Ambient light,default as 0
-	std::map<std::string, Object *> ObjectLists;		//object list
-	std::map<std::string, Light *> LightLists;		// point light list
+	std::map<std::string, Object *> ObjectMap;		//object list
+	std::map<std::string, Light *> LightMap;		// point light list
 };

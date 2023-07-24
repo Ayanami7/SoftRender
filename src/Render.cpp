@@ -64,6 +64,7 @@ void Render::imagePrint(std::string path)
     //transform the buffer to iamge data
 	for (size_t i = 0; i < frameBuffer.size();i++)
     {
+		// transform the zero point from the left-bottom to left-top
         int x = i % width; // Calculates the position of pixels on the X-axis
         int y = static_cast<int>(height - 1 - i / width); // Calculates the position of pixels on the Y-axis
 
@@ -108,9 +109,9 @@ void Render::drawWireframe()
 	auto objectLists = scene->allObjects();
 	for (auto const &object : objectLists)
 	{
-		glm::mat4 modelMatrix = object.second->getModelMatirx();
+		glm::mat4 modelMatrix = object->getModelMatirx();
 		glm::mat4 mvp = projectionMatrix * viewMatrix * modelMatrix;
-		auto TriangleLists = object.second->getTriangleLists();
+		auto TriangleLists = object->getTriangleLists();
 		for (auto const &t : TriangleLists)
 		{
 			// use to judge triangle whether need to be rendered
@@ -205,8 +206,8 @@ void Render::draw()
 	auto objectLists = scene->allObjects();
 	for (auto const &object : objectLists)
 	{
-		glm::mat4 modelMatrix = object.second->getModelMatirx();
-		auto TriangleLists = object.second->getTriangleLists();
+		glm::mat4 modelMatrix = object->getModelMatirx();
+		auto TriangleLists = object->getTriangleLists();
 		for (auto const &t : TriangleLists)
 		{
 			glm::mat4 mvp = projectionMatrix * viewMatrix * modelMatrix;
@@ -280,7 +281,7 @@ void Render::draw()
 			triangle.setColor(1, {148, 121.0, 92.0});
 			triangle.setColor(2, {148, 121.0, 92.0});
 
-			rasterizeTriangle(triangle, viewspace_pos, object.second->getTexture());
+			rasterizeTriangle(triangle, viewspace_pos, object->getTexture());
 		}
 	}
 
@@ -332,7 +333,32 @@ void Render::rasterizeTriangle(const Triangle &t, const std::array<glm::vec3, 3>
     }
 }
 
-glm::vec3 Render::castRay(const glm::vec3 _ori, const glm::vec3 _dir, int depth)
+HitRecord *trace(const Ray &ray, std::map<std::string, Object *> &objects)
+{
+	// the min tNear
+	float tNear = std::numeric_limits<float>::max();
+	HitRecord *payload = new HitRecord;
+
+	// traverse each Objects
+	for (const auto &t : objects)
+	{
+		// throuh k+variant as now-value
+		uint32_t indexK;
+		glm::vec2 uvK;
+		float tNearK = std::numeric_limits<float>::max();
+		if (t.second->intersect(ray, tNearK, indexK, uvK) && tNearK < tNear)
+		{
+			payload->obj = t.second;
+			payload->tNear = tNearK;
+			payload->index = indexK;
+			payload->uv = uvK;
+			tNear = tNearK;		// updata the min values
+		}
+	}
+	return payload;
+}
+
+glm::vec3 Render::castRay(const Ray &ray, int depth)
 {
 	// use depth to control recursion depth,max-value default as 5
 	if (depth < this->recurveDepth)
