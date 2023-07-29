@@ -506,8 +506,8 @@ void Render::render()
 		for (int i = 0; i < width; i++)
 		{
 			float x, y;
-			x = (2 * (i + 0.5f) / height - 1) * scale * tNear * ratio;
-			y = (2 * (j + 0.5f) / width - 1) * scale * tNear;
+			x = (2 * (i + 0.5f) / width - 1) * scale * ratio;
+			y = (2 * (j + 0.5f) / height - 1) * scale;
 			y = -y;
 
 			glm::vec3 dir = glm::vec3(x, y, -tNear) - eyePos;
@@ -520,7 +520,7 @@ void Render::render()
 		UpdateProgress(j / (float)height);
 	}
 	// save framebuffer to file
-    FILE* fp = fopen("binary.ppm", "wb");
+    FILE* fp = fopen("cache/binary.ppm", "wb");
     (void)fprintf(fp, "P6\n%d %d\n255\n", width, height);
     for (auto i = 0; i < height * width; ++i) 
 	{

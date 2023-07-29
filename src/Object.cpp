@@ -62,7 +62,11 @@ bool Object::intersect(const Ray &ray, float &tNear, uint32_t &index, glm::vec2&
 	{
 		float u, v;
 		float t;
-		if (TriangleLists[i]->rayTriangleIntersect(ray, t, u, v) && t < tNear)
+		auto modelMat = getModelMatirx();
+		glm::vec3 v0 = tovec3(modelMat * TriangleLists[i]->vertex[0]);
+		glm::vec3 v1 = tovec3(modelMat * TriangleLists[i]->vertex[1]);
+		glm::vec3 v2 = tovec3(modelMat * TriangleLists[i]->vertex[2]);
+		if (rayTriangleIntersect(v0, v1, v2, ray, t, u, v) && t < tNear)
 		{
 			tNear = t;
 			uv.x = u;
@@ -74,7 +78,7 @@ bool Object::intersect(const Ray &ray, float &tNear, uint32_t &index, glm::vec2&
 	return intersect;
 }
 
-void Object::getSurfaceProperty(const uint32_t index, const glm::vec2 uv, glm::vec3 &normal, glm::vec2 &st)
+void Object::getSurfaceProperty(const uint32_t &index, const glm::vec2 &uv, glm::vec3 &normal, glm::vec2 &st)
 {
 	const glm::vec3 v0 = tovec3(TriangleLists[index]->vertex[0]);
 	const glm::vec3 v1 = tovec3(TriangleLists[index]->vertex[1]);

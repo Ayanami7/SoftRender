@@ -27,7 +27,8 @@ public:
     void setColor(int index, const glm::vec3 &v_color);
     void setTexCoord(int index, const glm::vec2 &t_coord);
 
-	bool rayTriangleIntersect(const Ray &ray, float &tnear, float &u, float &v);
-
 	std::array<glm::vec4, 3> vec4Array() const;
 };
+
+bool rayTriangleIntersect(const glm::vec3 &v0, const glm::vec3 &v1, const glm::vec3 &v2,
+						  const Ray &ray, float &tnear, float &u, float &v);
