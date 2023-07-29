@@ -22,7 +22,9 @@ public:
 	// background color setter/getter
 	void setBackColor(const glm::vec3 &_color) { backColor = _color; }
 	glm::vec3 &getBackColor() { return backColor; }
-
+	// set the min offset
+	void setEpsilon(const float &f) { epsilon = f; }
+	float &getEpsilon() { return epsilon; }
 	std::vector<Object *> allObjects()
 	{
 		std::vector<Object *> ObjectLists;
@@ -54,4 +56,5 @@ private:
 	glm::vec3 ambLight = glm::vec3(0, 0, 0);	// Ambient light,default as 0
 	std::map<std::string, Object *> ObjectMap;		//object list
 	std::map<std::string, Light *> LightMap;		// point light list
+	float epsilon = 0.00001;
 };

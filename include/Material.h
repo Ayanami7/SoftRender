@@ -11,11 +11,13 @@ enum MaterialType
 class Material
 {
 public:
-	inline Material(MaterialType t = DIFFUSE_AND_GLOSSY, glm::vec3 c = glm::vec3(148, 121.0, 92.0), glm::vec3 e = glm::vec3(0.0, 0.0, 0.0));
+	inline Material(MaterialType t = DIFFUSE_AND_GLOSSY, glm::vec3 c = glm::vec3(148.0, 121.0, 92.0), glm::vec3 e = glm::vec3(0.0, 0.0, 0.0));
 	MaterialType mType;
 	glm::vec3 mColor;
 	glm::vec3 mEmission;
-	float Kd, Ks;
+	float ior;		//index of refraction
+	float Kd = 0.8;
+	float Ks = 0.2;
 	float specularExponent;
 
 };

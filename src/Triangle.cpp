@@ -66,8 +66,8 @@ bool Triangle::rayTriangleIntersect(const Ray &ray, float &tnear, float &u, floa
 	tnear = re.x;
 	u = re.y;
 	v = re.z;
-
-	if (tnear > 0 && v >= 0 && v <= 1 && u >= 0 && u <= 1)
+	
+	if (tnear >= 0.0 && u >= 0.0 && v >= 0.0 && (1 - u - v) >= 0)
 		return true;
 	return false;
 }

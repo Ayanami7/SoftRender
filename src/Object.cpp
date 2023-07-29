@@ -31,6 +31,7 @@ Object::Object(const std::string &model_path)
 		}
 	}
 	// init pos and X axis
+	material = new Material;		// set default material
 	position = glm::vec3(0.0, 0.0, 0.0);
 	rotateAxis = glm::vec3(0.0, 1.0, 0.0);
 	scaleRatio = glm::vec3(1.0, 1.0, 1.0);
@@ -54,15 +55,16 @@ glm::mat4 Object::getModelMatirx()
 }
 
 // process each triangle;
-bool Object::intersect(const Ray &ray, float tNear, uint32_t &index, glm::vec2& uv)
+bool Object::intersect(const Ray &ray, float &tNear, uint32_t &index, glm::vec2& uv)
 {
 	bool intersect = false;
 	for (uint32_t i = 0; i < TriangleLists.size();i++)
 	{
 		float u, v;
-		float tNear;
-		if (TriangleLists[i]->rayTriangleIntersect(ray, tNear, u, v))
+		float t;
+		if (TriangleLists[i]->rayTriangleIntersect(ray, t, u, v) && t < tNear)
 		{
+			tNear = t;
 			uv.x = u;
 			uv.y = v;
 			index = i;
@@ -72,7 +74,7 @@ bool Object::intersect(const Ray &ray, float tNear, uint32_t &index, glm::vec2& 
 	return intersect;
 }
 
-void Object::getSurfaceProperty(const uint32_t index, const glm::vec2 uv, glm::vec3 &normal, glm::vec2 st)
+void Object::getSurfaceProperty(const uint32_t index, const glm::vec2 uv, glm::vec3 &normal, glm::vec2 &st)
 {
 	const glm::vec3 v0 = tovec3(TriangleLists[index]->vertex[0]);
 	const glm::vec3 v1 = tovec3(TriangleLists[index]->vertex[1]);

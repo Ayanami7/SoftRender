@@ -13,8 +13,8 @@ public:
 
 	glm::mat4 getModelMatirx();
 
-	bool intersect(const Ray &ray, float tNear, uint32_t &index, glm::vec2 &uv);
-	void getSurfaceProperty(const uint32_t index, const glm::vec2 uv, glm::vec3 &normal, glm::vec2 st);
+	bool intersect(const Ray &ray, float &tNear, uint32_t &index, glm::vec2 &uv);
+	void getSurfaceProperty(const uint32_t index, const glm::vec2 uv, glm::vec3 &normal, glm::vec2 &st);
 
 	inline virtual void loadTexture(const std::string &path)
 	{

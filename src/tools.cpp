@@ -62,3 +62,22 @@ bool solveQuadratic(const float &a, const float &b, const float &c, float &x0, f
     if (x0 > x1) std::swap(x0, x1);
     return true;
 }
+
+void UpdateProgress(float progress)
+{
+    int barWidth = 70;
+
+    std::cout << "[";
+    int pos = barWidth * progress;
+    for (int i = 0; i < barWidth; ++i)
+    {
+        if (i < pos)
+            std::cout << "=";
+        else if (i == pos)
+            std::cout << ">";
+        else
+            std::cout << " ";
+    }
+    std::cout << "] " << int(progress * 100.0) << " %\r";
+    std::cout.flush();
+}

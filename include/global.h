@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #define MY_PI 3.14159
+#define EPSILON 0.00001
 
 enum struct BufferType
 {

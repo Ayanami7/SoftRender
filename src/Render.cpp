@@ -277,9 +277,10 @@ void Render::draw()
 			}
 
 			// set the color for default value to test phong shader
-			triangle.setColor(0, {148, 121.0, 92.0});
-			triangle.setColor(1, {148, 121.0, 92.0});
-			triangle.setColor(2, {148, 121.0, 92.0});
+			glm::vec3 mColor = object->getMaterial()->mColor;
+			triangle.setColor(0, mColor);
+			triangle.setColor(1, mColor);
+			triangle.setColor(2, mColor);
 
 			rasterizeTriangle(triangle, viewspace_pos, object->getTexture());
 		}
@@ -333,11 +334,71 @@ void Render::rasterizeTriangle(const Triangle &t, const std::array<glm::vec3, 3>
     }
 }
 
-HitRecord *trace(const Ray &ray, std::map<std::string, Object *> &objects)
+//Limit the float in[lo,hi]
+float clamp(const float &lo, const float &hi, const float &v)
+{
+	return std::max(lo, std::min(hi, v));
+}
+
+// calculate the reflect ray
+glm::vec3 reflect(const glm::vec3 &in, const glm::vec3 &N)
+{
+	return in - 2 * glm::dot(in, N) * N;
+}
+
+// calculate the refract ray   ior = index of refraction
+glm::vec3 refract(const glm::vec3 &in, const glm::vec3 &N, const float &ior)
+{
+	float cosi = clamp(-1, 1, glm::dot(in, N));
+	float etai = 1;
+	float etat = ior;
+	glm::vec3 n = N;
+	if(cosi < 0)
+	{
+		cosi = -cosi;
+	}
+	else
+	{
+		std::swap(etai, etat);
+		n = -N;
+	}
+	float eta = etai / etat;
+	float k = 1 - eta * eta * (1 - cosi * cosi);
+	return k < 0 ? glm::vec3(0) : eta * in + (eta * cosi - sqrtf(k)) * n;
+}
+
+// calculate the fresnel index
+float fresnel(const glm::vec3 &in, const glm::vec3 &N, const float &ior)
+{
+	float cosi = clamp(-1, 1, glm::dot(in, N));
+	float etai = 1;
+	float etat = ior;
+	if (cosi > 0) 
+	{
+	std::swap(etai, etat);
+	}
+	// Compute sini using Snell's law
+	float sint = etai / etat * sqrtf(std::max(0.f, 1 - cosi * cosi));
+	// Total internal reflection
+    if (sint >= 1) 
+	{
+        return 1;
+    }
+    else 
+	{
+		float cost = sqrtf(std::max(0.f, 1 - sint * sint));
+		cosi = fabsf(cosi);
+		float Rs = ((etat * cosi) - (etai * cost)) / ((etat * cosi) + (etai * cost));
+        float Rp = ((etai * cosi) - (etat * cost)) / ((etai * cosi) + (etat * cost));
+		return (Rs * Rs + Rp * Rp) / 2;
+	}
+}
+
+HitRecord *trace(const Ray &ray, std::vector<Object *> &objects)
 {
 	// the min tNear
 	float tNear = std::numeric_limits<float>::max();
-	HitRecord *payload = new HitRecord;
+	HitRecord *payload = nullptr;
 
 	// traverse each Objects
 	for (const auto &t : objects)
@@ -346,9 +407,10 @@ HitRecord *trace(const Ray &ray, std::map<std::string, Object *> &objects)
 		uint32_t indexK;
 		glm::vec2 uvK;
 		float tNearK = std::numeric_limits<float>::max();
-		if (t.second->intersect(ray, tNearK, indexK, uvK) && tNearK < tNear)
+		if (t->intersect(ray, tNearK, indexK, uvK) && tNearK < tNear)
 		{
-			payload->obj = t.second;
+			payload = new HitRecord;
+			payload->obj = t;
 			payload->tNear = tNearK;
 			payload->index = indexK;
 			payload->uv = uvK;
@@ -361,11 +423,71 @@ HitRecord *trace(const Ray &ray, std::map<std::string, Object *> &objects)
 glm::vec3 Render::castRay(const Ray &ray, int depth)
 {
 	// use depth to control recursion depth,max-value default as 5
-	if (depth < this->recurveDepth)
+	if (depth > this->recurveDepth)
 		return glm::vec3(0.0, 0.0, 0.0);
 	glm::vec3 hitColor = scene->getBackColor();
+	Scene *scene = getScene();
+	if(auto payload = trace(ray,scene->allObjects()))
+	{
+		glm::vec3 hitPoint = ray.origin + ray.direction * payload->tNear;	//cross point
+		glm::vec3 N;	//normal
+		glm::vec2 st;
+		payload->obj->getSurfaceProperty(payload->index, payload->uv, N, st);	// get N and st
+		switch (payload->obj->getMaterial()->mType)
+		{
+			case REFLECTION_AND_REFRACTION:
+			{
+				// create the reflect Ray an refract Ray
+				Ray reflectRay;
+				reflectRay.direction = glm::normalize(reflect(ray.direction, N));
+				reflectRay.origin = (glm::dot(reflectRay.direction, N) < 0) ? hitPoint - N * scene->getEpsilon() : hitPoint + N * scene->getEpsilon();
+				Ray refractRay;
+				refractRay.direction = glm::normalize(refract(ray.direction, N, payload->obj->getMaterial()->ior));
+				refractRay.origin = (glm::dot(refractRay.direction, N) < 0) ? hitPoint - N * scene->getEpsilon() : hitPoint + N * scene->getEpsilon();
+				//entry the recursion
+				glm::vec3 reflectColor = castRay(reflectRay, depth + 1);
+				glm::vec3 refractColor = castRay(refractRay, depth + 1);
+				float kr = fresnel(ray.direction, N, payload->obj->getMaterial()->ior);
+				hitColor = reflectColor * kr + refractColor * (1 - kr);
+				break;
+			}
+			case REFLECTION:
+			{
+				float kr = fresnel(ray.direction, N, payload->obj->getMaterial()->ior);
+				Ray reflectRay;
+				reflectRay.direction = glm::normalize(reflect(ray.direction, N));
+				reflectRay.origin = (glm::dot(reflectRay.direction, N) < 0 ? hitPoint - N * scene->getEpsilon() : hitPoint + N * scene->getEpsilon());
+				hitColor = castRay(reflectRay, depth + 1) * kr;
+				break;
+			}
+			default:
+			{
+				// default as phong model
+				glm::vec3 lightAmt = glm::vec3(0);
+				glm::vec3 specularColor = glm::vec3(0);
+				glm::vec3 shadowPointOrigin = (glm::dot(ray.direction, N) < 0) ? hitPoint + N * scene->getEpsilon() : hitPoint - N * scene->getEpsilon();
+				for (auto &light : scene->allLights())
+				{
+					glm::vec3 lightDir = light->position - hitPoint;
+					float lightDistance2 = glm::dot(lightDir, lightDir);
+					lightDir = glm::normalize(lightDir);
+					float LdotN = std::max(0.0f, glm::dot(lightDir, N));
+					Ray tmpRay(shadowPointOrigin, lightDir);
+					auto shadow_res = trace(tmpRay, scene->allObjects());
+					bool inShadow = shadow_res && (shadow_res->tNear * shadow_res->tNear < lightDistance2);
 
-	return glm::vec3(0, 0, 0);
+					lightAmt += inShadow ? glm::vec3(0) : light->intensity * LdotN;
+					glm::vec3 reflectionDirection = reflect(-lightDir, N);
+
+                    specularColor += powf(std::max(0.f, -glm::dot(reflectionDirection, ray.direction)),
+                        payload->obj->getMaterial()->specularExponent) * light->intensity;
+				}
+				hitColor = lightAmt * payload->obj->getMaterial()->mColor * payload->obj->getMaterial()->Kd + specularColor * payload->obj->getMaterial()->Ks;
+				break;
+			}
+		}
+	}
+	return hitColor;
 }
 
 // render the picture based on ray tracing 
@@ -375,18 +497,38 @@ void Render::render()
 	float ratio = camera->getRatio();
 	float theta = camera->getFov() * MY_PI / 180.0f;
 	float scale = std::tan(theta / 2);
-
+	Scene *scene = getScene();
+	this->clearBuffer(BufferType::COLOR_BUF);
+	this->clearBuffer(BufferType::DEPTH_BUF);
+	float tNear = camera->getNear();
 	for (int j = 0; j < height; j++)
 	{
 		for (int i = 0; i < width; i++)
 		{
 			float x, y;
-			x = (2 * (i + 0.5f) / height - 1) * scale * ratio;
-			y = (2 * (j + 0.5f) / width - 1) * scale;
+			x = (2 * (i + 0.5f) / height - 1) * scale * tNear * ratio;
+			y = (2 * (j + 0.5f) / width - 1) * scale * tNear;
 			y = -y;
 
-			glm::vec3 dir = glm::normalize(glm::vec3(x, y, -1));
-			
+			glm::vec3 dir = glm::vec3(x, y, -tNear) - eyePos;
+			dir = glm::normalize(dir);
+			Ray eyeRay(eyePos, dir);
+			// entry the castRay
+			auto mcolor = castRay(eyeRay, 0);
+			this->frameBuffer[getPos(i, j)] = mcolor;
 		}
+		UpdateProgress(j / (float)height);
 	}
+	// save framebuffer to file
+    FILE* fp = fopen("binary.ppm", "wb");
+    (void)fprintf(fp, "P6\n%d %d\n255\n", width, height);
+    for (auto i = 0; i < height * width; ++i) 
+	{
+        static unsigned char color[3];
+        color[0] = (char)(frameBuffer[i].x);
+        color[1] = (char)(frameBuffer[i].y);
+        color[2] = (char)(frameBuffer[i].z);
+        fwrite(color, 1, 3, fp);
+    }
+    fclose(fp);    
 }

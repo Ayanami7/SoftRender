@@ -17,3 +17,6 @@ glm::vec3 tovec3(const glm::vec4 v);
 
 // to solve the Quadratic equation  aX^2+bX+c = 0  X0 < X1
 bool solveQuadratic(const float &a, const float &b, const float &c, float &x0, float &x1);
+
+// show the rendering progress bar
+void UpdateProgress(float progress);
